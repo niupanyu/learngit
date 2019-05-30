@@ -1,11 +1,15 @@
 CC := g++
 INCLUDE := 
-LIB     := -L/usr/local/lib -lboost_system
+LIB     := -L/usr/local/lib -lboost_system -lboost_random
 
-main : main.o
-	$(CC) -o main main.o $(INCLUDE) $(LIB)
-main.o : main.cpp
-	cc -c main.cpp
+objects = main.o bimap_func.o
+
+
+
+main : $(objects) 
+	$(CC) -o main $(objects) $(INCLUDE) $(LIB)
+
+$(objects) : bimap_func.h
 
 clean:
-	rm main main.o
+	rm main $(objects)

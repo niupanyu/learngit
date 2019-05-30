@@ -1,0 +1,2 @@
+
+void bimap_func();
