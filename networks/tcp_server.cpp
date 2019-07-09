@@ -44,7 +44,6 @@ int main(int argc, char *argv[])
 
      while(1)
      {
-         auto start = std::chrono::system_clock::now();
          clilen = sizeof(cli_addr);
          newsockfd = accept(sockfd, 
                  (struct sockaddr *) &cli_addr, 
@@ -52,6 +51,7 @@ int main(int argc, char *argv[])
          if (newsockfd < 0) 
              error("ERROR on accept");
         
+         auto start = std::chrono::system_clock::now();
          bzero(buffer,256);
          n = read(newsockfd,buffer,255);
          if (n < 0) error("ERROR reading from socket");
