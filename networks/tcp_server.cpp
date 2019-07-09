@@ -8,6 +8,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <iostream>
+#include <chrono>
+
+
 void error(const char *msg)
 {
     perror(msg);
@@ -40,6 +44,7 @@ int main(int argc, char *argv[])
 
      while(1)
      {
+         auto start = std::chrono::system_clock::now();
          clilen = sizeof(cli_addr);
          newsockfd = accept(sockfd, 
                  (struct sockaddr *) &cli_addr, 
@@ -54,6 +59,11 @@ int main(int argc, char *argv[])
          n = write(newsockfd,"I got your message",18);
          if (n < 0) error("ERROR writing to socket");
          close(newsockfd);
+         
+         auto end = std::chrono::system_clock::now();
+         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+         std::cout << "cost" << duration.count() << " ms" << std::endl;
+             
     }
     
     close(sockfd);

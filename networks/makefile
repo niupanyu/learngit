@@ -1,6 +1,6 @@
 CC := g++
 INCLUDE :=
-LIB :=
+LIB := -std=c++11
 #LIB := -L/usr/local/lib -lboost_system 
 APP_NAME := tcp_server
 
