@@ -51,9 +51,11 @@ int main(int argc, char *argv[])
          if (newsockfd < 0) 
              error("ERROR on accept");
         
-         auto start = std::chrono::system_clock::now();
+         //auto start = std::chrono::system_clock::now();
          bzero(buffer,256);
          n = read(newsockfd,buffer,255);
+
+         auto start = std::chrono::system_clock::now();
          if (n < 0) error("ERROR reading from socket");
          printf("Here is the message: %s\n",buffer);
          n = write(newsockfd,"I got your message",18);
