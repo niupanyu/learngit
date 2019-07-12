@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h> 
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -17,6 +18,15 @@ void error(const char *msg)
     perror(msg);
     exit(1);
 }
+
+void  sigchld_handler(int sig)
+{
+    while(waitpid(-1, 0, WNOHANG) > 0)
+        ;
+
+    return;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -34,6 +44,9 @@ int main(int argc, char *argv[])
         error("ERROR opening socket");
      bzero((char *) &serv_addr, sizeof(serv_addr));
      portno = atoi(argv[1]);
+
+     signal(SIGCHLD, sigchld_handler); 
+     
      serv_addr.sin_family = AF_INET;
      serv_addr.sin_addr.s_addr = INADDR_ANY;
      serv_addr.sin_port = htons(portno);
@@ -48,24 +61,40 @@ int main(int argc, char *argv[])
          newsockfd = accept(sockfd, 
                  (struct sockaddr *) &cli_addr, 
                  &clilen);
-         if (newsockfd < 0) 
-             error("ERROR on accept");
-        
-         //auto start = std::chrono::system_clock::now();
-         bzero(buffer,256);
-         n = read(newsockfd,buffer,255);
-
-         auto start = std::chrono::system_clock::now();
-         if (n < 0) error("ERROR reading from socket");
-         printf("Here is the message: %s\n",buffer);
-         n = write(newsockfd,"I got your message",18);
-         if (n < 0) error("ERROR writing to socket");
-         close(newsockfd);
          
-         auto end = std::chrono::system_clock::now();
-         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-         std::cout << "cost" << duration.count() << " ms" << std::endl;
+         if(fork() == 0)
+         {
+             std::cout << "child pid:" << getpid() << std::endl;
+             close(sockfd);
              
+             if (newsockfd < 0) 
+                 error("ERROR on accept");
+             
+
+             //auto start = std::chrono::system_clock::now();
+             bzero(buffer,256);
+             n = read(newsockfd,buffer,255);
+
+             auto start = std::chrono::system_clock::now();
+             if (n < 0) error("ERROR reading from socket");
+             
+             printf("Here is the message: %s\n",buffer);
+             n = write(newsockfd,"I got your message",18);
+             if (n < 0) error("ERROR writing to socket");
+             
+             close(newsockfd);
+         
+             auto end = std::chrono::system_clock::now();
+             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+             std::cout << "cost" << duration.count() << " ms" << std::endl;
+             exit(0);
+         }         
+         else
+         {
+             close(newsockfd);
+             std::cout << "child pid:" << getpid() << std::endl;
+
+         }
     }
     
     close(sockfd);
