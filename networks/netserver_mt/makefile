@@ -1,7 +1,7 @@
 CC := g++
 INCLUDE :=
-LIB := -std=c++11 -lpthread
-LIB += -L/usr/local/lib -lboost_system -lboost_thread 
+LIB :=  -std=c++11 -lpthread
+LIB += -L/usr/local/lib -lboost_system -lboost_thread -lboost_chrono 
 APP_NAME := tcp_server
 
 objects = tcp_server.o

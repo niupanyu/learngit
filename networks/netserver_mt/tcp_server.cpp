@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 
 #include <iostream>
-#include <chrono>
+#include <boost/chrono.hpp>
 #include <boost/thread.hpp>
 
 void error(const char *msg)
@@ -38,7 +38,8 @@ class Task{
 
 		void operator()(){
 			echo_handler(_id);
-			boost::this_thread::yield();
+			//yiled() ==> sleep(0);
+			//boost::this_thread::yield();
 		}
 };
 
@@ -46,7 +47,7 @@ void echo_handler(int fd)
 {
 	int n;
     char buffer[256];
-//	auto start = std::chrono::system_clock::now();
+	auto start = boost::chrono::system_clock::now();
 	while(1){
 		bzero(buffer, 256);
 		n = read(fd, buffer, 255);
@@ -55,9 +56,11 @@ void echo_handler(int fd)
 		if(n == 0){
 		    std::cout << "client close request." << std::endl;
 			close(fd);
-			//auto end = std::chron::system_clock::now();
-			//auto duration = std::chrono::duration_cast<std::microseconds>(end - start);
-			//std::cout << "cost:" << duration.cout() << " us" << std::endl;
+			auto end = boost::chrono::system_clock::now();
+
+			auto duration = boost::chrono::duration_cast<boost::chrono::microseconds>(end - start);
+			
+			std::cout << "cost:" << duration.count() << " us" << std::endl;
 			return;
 		}
 
@@ -104,48 +107,6 @@ int main(int argc, char *argv[])
 
 		 boost::thread thrd(task);
 	     thrd.detach();	 
-		 /*
-		 if(fork() == 0)
-         {
-             std::cout << "child pid:" << getpid() << std::endl;
-             close(sockfd);
-             
-             if (newsockfd < 0) 
-                 error("ERROR on accept");
-             
-             auto start = std::chrono::system_clock::now();
-             while(1)
-             {
-
-                bzero(buffer,256);
-                n = read(newsockfd,buffer,255);
-
-                if (n < 0) error("ERROR reading from socket");
-
-                if(n == 0)
-                {
-                    std::cout << " client  close requst." << std::endl;
-                    close(newsockfd);
-        
-                    auto end = std::chrono::system_clock::now();
-                    
-                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
-                    std::cout << "cost" << duration.count() << " us" << std::endl;
-                    exit(0);
-                }
-                //printf("Here is the message: %s\n",buffer);
-                n = write(newsockfd,"I got your message",18);
-                if (n < 0) error("ERROR writing to socket");
-         
-             }
-         }         
-         else
-         {
-             close(newsockfd);
-             //std::cout << "child pid:" << getpid() << std::endl;
-
-         }
-		 */
     }
     
     close(sockfd);
