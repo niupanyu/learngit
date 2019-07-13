@@ -53,7 +53,8 @@ int main(int argc, char *argv[])
      if (bind(sockfd, (struct sockaddr *) &serv_addr,
               sizeof(serv_addr)) < 0) 
               error("ERROR on binding");
-     listen(sockfd,5);
+     // /proc/sys/net/ipv4/tcp_max_syn_backlog
+     listen(sockfd,128);
 
      while(1)
      {
@@ -69,40 +70,37 @@ int main(int argc, char *argv[])
              
              if (newsockfd < 0) 
                  error("ERROR on accept");
+             
+             auto start = std::chrono::system_clock::now();
              while(1)
              {
 
-                //auto start = std::chrono::system_clock::now();
                 bzero(buffer,256);
                 n = read(newsockfd,buffer,255);
 
-                auto start = std::chrono::system_clock::now();
                 if (n < 0) error("ERROR reading from socket");
 
                 if(n == 0)
                 {
                     std::cout << " client  close requst." << std::endl;
                     close(newsockfd);
-
+        
+                    auto end = std::chrono::system_clock::now();
+                    
+                    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
+                    std::cout << "cost" << duration.count() << " us" << std::endl;
                     exit(0);
-
                 }
-                printf("Here is the message: %s\n",buffer);
+                //printf("Here is the message: %s\n",buffer);
                 n = write(newsockfd,"I got your message",18);
                 if (n < 0) error("ERROR writing to socket");
-             
-                //close(newsockfd);
          
-                auto end = std::chrono::system_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-                std::cout << "cost" << duration.count() << " ms" << std::endl;
-            // exit(0);
              }
          }         
          else
          {
              close(newsockfd);
-             std::cout << "child pid:" << getpid() << std::endl;
+             //std::cout << "child pid:" << getpid() << std::endl;
 
          }
     }
