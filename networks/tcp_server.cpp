@@ -69,25 +69,35 @@ int main(int argc, char *argv[])
              
              if (newsockfd < 0) 
                  error("ERROR on accept");
-             
+             while(1)
+             {
 
-             //auto start = std::chrono::system_clock::now();
-             bzero(buffer,256);
-             n = read(newsockfd,buffer,255);
+                //auto start = std::chrono::system_clock::now();
+                bzero(buffer,256);
+                n = read(newsockfd,buffer,255);
 
-             auto start = std::chrono::system_clock::now();
-             if (n < 0) error("ERROR reading from socket");
+                auto start = std::chrono::system_clock::now();
+                if (n < 0) error("ERROR reading from socket");
+
+                if(n == 0)
+                {
+                    std::cout << " client  close requst." << std::endl;
+                    close(newsockfd);
+
+                    exit(0);
+
+                }
+                printf("Here is the message: %s\n",buffer);
+                n = write(newsockfd,"I got your message",18);
+                if (n < 0) error("ERROR writing to socket");
              
-             printf("Here is the message: %s\n",buffer);
-             n = write(newsockfd,"I got your message",18);
-             if (n < 0) error("ERROR writing to socket");
-             
-             close(newsockfd);
+                //close(newsockfd);
          
-             auto end = std::chrono::system_clock::now();
-             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-             std::cout << "cost" << duration.count() << " ms" << std::endl;
-             exit(0);
+                auto end = std::chrono::system_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+                std::cout << "cost" << duration.count() << " ms" << std::endl;
+            // exit(0);
+             }
          }         
          else
          {
