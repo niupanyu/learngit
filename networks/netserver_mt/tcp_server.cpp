@@ -13,6 +13,10 @@
 #include <boost/chrono.hpp>
 #include <boost/thread.hpp>
 
+#include <boost/noncopyable.hpp>
+#include <boost/asio/io_service.hpp>
+
+
 void error(const char *msg)
 {
     perror(msg);
@@ -21,6 +25,7 @@ void error(const char *msg)
 
 void  sigchld_handler(int sig)
 {
+    std::cout << "recv signal:" << sig <<  std::endl;
     while(waitpid(-1, 0, WNOHANG) > 0)
         ;
 
@@ -30,12 +35,19 @@ void  sigchld_handler(int sig)
 void echo_handler(int fd);
 
 class Task{
+
+
 	private:
 		int _id;
+        bool _bTerminate;
 
 	public:
-		Task(int number):_id(number){}
+		Task(int number):_id(number), _bTerminate(false){}
+        ~Task()
+        {
+            _bTerminate = false;
 
+        }
 		void operator()(){
 			echo_handler(_id);
 			//yiled() ==> sleep(0);
@@ -43,11 +55,70 @@ class Task{
 		}
 };
 
+template <class T>
+struct task_wrapped{
+    private:
+        T task_unwrapped_;
+
+    public:
+        explicit task_wrapped(const T& t):task_unwrapped_(t){
+        }
+
+        void operator()()const{
+            try{
+                task_unwrapped_();
+
+            }catch(const std::exception& e)
+            {
+                std::cerr << "Exception:" << e.what() <<std::endl;
+            }catch(...){
+                std::cerr << "Unknown exception" << std::endl;
+            }
+        }
+
+};
+
+
+template <class T>
+task_wrapped<T>  make_task_wrapped(const T& task_unwrapped)
+{
+    return task_wrapped<T>(task_unwrapped);
+}
+
+
+
+class tasks_processor: private boost::noncopyable{
+    protected:
+        static boost::asio::io_service& get_ios(){
+            static boost::asio::io_service ios;
+            static boost::asio::io_service::work work(ios);
+
+            return ios;
+        }
+
+    public:
+        template<class T>
+        static  void push_task(const T& task_unwrapped){
+            get_ios().post(make_task_wrapped(task_unwrapped));
+
+         }
+
+        static void start(){
+            get_ios().run();
+        }
+
+        static void stop(){
+            get_ios().stop();
+        }
+};
+
+
 void echo_handler(int fd)
 {
 	int n;
     char buffer[256];
-	auto start = boost::chrono::system_clock::now();
+    
+    auto start = boost::chrono::system_clock::now();
 	while(1){
 		bzero(buffer, 256);
 		n = read(fd, buffer, 255);
@@ -65,6 +136,7 @@ void echo_handler(int fd)
 		}
 
 		std::cout << "recv:" << buffer << std::endl;
+        write(fd, buffer, 256);
 	}
 }
 
